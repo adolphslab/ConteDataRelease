@@ -1,0 +1,28 @@
+#!/bin/sh
+#$ -cwd
+#$ -V
+#$ -pe openmp 12
+
+# Template GridEngine job script for FMRIPREP 20.2.1 preprocessing of core1p2 and later sessions in Caltech Conte data release
+# AUTHOR : Remya Nair
+
+unset PYTHONPATH;
+
+#
+# Edit participant ID and paths to folders and containers below for your local environment
+#
+
+singularity run -B $HOME/.cache:/home/fmriprep/.cache -B /data3:/data3 --cleanenv /PATH/TO/SINGULARITY/IMAGE
+/PATH/TO/BIDS/FOLDER \
+/PATH/TO/OUTPUT/FOLDER \
+-w /PATH/TO/WORKING/FOLDER \
+participant --participant-label PARTICIPANT-ID \
+--skip_bids_validation \
+--nprocs 3 \
+--mem 48000 \
+--low-mem \
+--md-only-boilerplate \
+--longitudinal --output-spaces MNI152NLin2009cAsym:res-native fsaverage6 \
+--fs-license-file /PATH/TO/FREESURFER/LICENSE/FILE \
+--cifti-output --notrack \
+--ignore slicetiming 
