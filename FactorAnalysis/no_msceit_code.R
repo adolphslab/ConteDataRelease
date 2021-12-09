@@ -214,6 +214,7 @@ write.table(factor_analysis$loadings, file="loadings.tsv", sep="\t")
 num_fac <- find_factors(nona_df, "num_factor_revised.tsv")
 
 # Correlation plot
-# Mike Tyszka | CBIC
+# 2021-12 Mike Tyszka | CBIC
 r_pearson <- cor(nona_df, method="pearson")
-corrplot(r_pearson, order="hclust", addrect=4, tl.col="black")
+corrplot(r_pearson, tl.col="black")
+corrplot(r_pearson, order="hclust", hclust.method="complete", addrect=4, tl.col="black")
