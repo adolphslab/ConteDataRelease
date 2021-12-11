@@ -31,7 +31,6 @@ library(corrplot)
 library(paran)
 library(readxl)
 library(nFactors)
-# library(paramap) now released as EFA.dimensions
 library(EFA.dimensions)
 library(FactoMineR)
 library(factoextra)
@@ -40,6 +39,7 @@ library(psych)
 library(GPArotation)
 library(ggplot2)
 library(corrplot)
+library(pheatmap)
 
 # ************* Load File *************
 conteData <- read_excel('PARL_FA_20210312_Rona.xlsx') # n = 144
@@ -215,7 +215,19 @@ num_fac <- find_factors(nona_df, "num_factor_revised.tsv")
 
 # Correlation plots
 # 2021-12 Mike Tyszka | CBIC
+
+# Calculate Pearson's r for behavioral data
 r_pearson <- cor(nona_df, method="pearson")
-corrplot(r_pearson, order="alphabet", tl.col="black")
-corrplot(r_pearson, order="FPC", tl.col="black")
-corrplot(r_pearson, order="hclust", hclust.method="complete", addrect=4, tl.col="black")
+
+# corrplot visualization (no dendrogram)
+# corrplot(r_pearson, order="alphabet", tl.col="black")
+# corrplot(r_pearson, order="FPC", tl.col="black")
+# corrplot(r_pearson, order="hclust", hclust.method="complete", addrect=4, tl.col="black")
+
+# pheatmap visualization (no dots)
+pheatmap(
+  r_pearson,
+  clustering_method = 'complete',
+  clustering_distance_rows = as.dist(1 - r_pearson),
+  clustering_distance_cols = as.dist(1 - r_pearson),
+  )
