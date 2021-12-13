@@ -189,9 +189,10 @@ fa_unrot_scores <- factor.scores(nona_df, fa_rot$loadings, method="Bartlett")$sc
 write.table(fa_unrot_scores, file="fa_unrotated_individual_score.tsv", sep="\t")
 write.table(fa_unrot$loadings, file="fa_unrotated_loadings.tsv", sep="\t")
 
-# Determine the number of factors
-# TODO: Lynn - leave in?
-num_fac <- find_factors(nona_df, "num_factor_revised.tsv")
+# Estimate number of factors with a variety of methods
+num_fac <- find_factors(nona_df, "num_factor_estimates.tsv")
 
-# Correlation plot
+# Correlation plot - save to PNG file
+png(file="CorrMat_FPC.png", width=3000, height=3000, res=300)
 corrplot(r_spearman, order="FPC", tl.col="black")
+dev.off()
