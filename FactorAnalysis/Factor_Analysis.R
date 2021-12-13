@@ -185,7 +185,7 @@ write.table(fa_rot$loadings, file="fa_rotated_loadings.tsv", sep="\t")
 # Write individual scores and loadings to files
 cat("\nFactor Analysis without Rotation\n")
 fa_unrot <- fa(r_spearman, nfactors = 4, n.obs = 144, rotate="none", scores="regression", fm="ml")
-fa_unrot_scores <- factor.scores(nona_df, fa_rot$loadings, method="Bartlett")$scores
+fa_unrot_scores <- factor.scores(nona_df, fa_unrot$loadings, method="Bartlett")$scores
 write.table(fa_unrot_scores, file="fa_unrotated_individual_score.tsv", sep="\t")
 write.table(fa_unrot$loadings, file="fa_unrotated_loadings.tsv", sep="\t")
 
