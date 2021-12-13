@@ -24,8 +24,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-setwd("/Users/jmt/GitHub/ConteDataRelease/FactorAnalysis")
-
 # Libraries
 library(corrplot)
 library(paran)
@@ -41,40 +39,79 @@ library(ggplot2)
 library(corrplot)
 library(pheatmap)
 
-# ************* Load File *************
-conteData <- read_excel('PARL_FA_20210312_Rona.xlsx') # n = 144
 
-# exclude values with low Quality measure
-# cex <- subset(conteData, Include..Exclude. != 'Exclude all data') # n = 144
-cex <- conteData
+# Edit for local folder location
+setwd("/Users/jmt/GitHub/ConteDataRelease/FactorAnalysis")
 
-# Added PSS, SQ, and EQ
-# Added an X at the beginning of columns beginning with numbers
-no_msceit <- cbind(cex$STAI_State_Tscore, cex$STAI_Trait_Tscore, cex$BDI2_Total, cex$PANAS_Negative, 
-                  cex$PSS_Total, cex$SQ_Total, cex$EQ_Total,
-                  cex$PANAS_Positive, cex$X16PF_Q1, 
-                  cex$X16PF_C,
-                  cex$X16PF_B,
-                  cex$VCI, cex$X16PF_O,
-                  cex$PRI, cex$X16PF_G, 
-                  cex$X16PF_Q1,
-                  cex$X16PF_A, cex$X16PF_Q2, 
-                  cex$X16PF_N, cex$X16PF_F, 
-                  cex$X16PF_H, cex$SNI_Count,
-                  cex$X16PF_M, cex$X16PF_Q3,
-                  cex$X16PF_E, cex$X16PF_L, 
-                  cex$X16PF_I)
+# Load excel sheet
+cex <- read_excel('PARL_FA_20210312_Rona.xlsx') # n = 144
 
-names <- cbind("STAI State T Score", "STAI Trait T Score", "BDI Total", "PANAS Negative", "PSS", "SQ", "EQ", 
-               "PANAS Positive", "16PF Tension", "16PF Emotional Stability", "16PF Reasoning",
-               "VCI IQ", "16PF Apprehension", "PRI IQ", "16PF Rule Conciousness", "16PF Openness to Change",
-               "16PF Warmth", "16PF Self Reliance", "16PF Privateness", "16PF Liveliness", 
-               "16PF Social Boldness", "SNI People in Network", "16PF Abstractedness", "16PF Perfectionism", 
-               "16PF Dominance", "16PF Vigilance", "16PF Sensitivity")
+# Composite data frame from spreadsheet columns
+# Replace 16PF with I6PF in spreadsheet (variable names cannot begin with a number)
+no_msceit <- cbind(
+  cex$STAI_State_Tscore, # 1
+  cex$STAI_Trait_Tscore,
+  cex$BDI2_Total,
+  cex$PANAS_Negative,
+  cex$PSS_Total, # 5
+  cex$SQ_Total,
+  cex$EQ_Total,
+  cex$PANAS_Positive,
+  cex$I6PF_Q1, # Tension
+  cex$I6PF_C, # 10
+  cex$I6PF_B,
+  cex$VCI,
+  cex$I6PF_O,
+  cex$PRI,
+  cex$I6PF_G, # 15
+  cex$I6PF_Q1, # Openness to Change
+  cex$I6PF_A,
+  cex$I6PF_Q2, 
+  cex$I6PF_N,
+  cex$I6PF_F, # 20 
+  cex$I6PF_H,
+  cex$SNI_Count,
+  cex$I6PF_M,
+  cex$I6PF_Q3,
+  cex$I6PF_E, # 25
+  cex$I6PF_L,
+  cex$I6PF_I) # 27
 
+# Readable name mapping
+names <- cbind(
+  "STAI State T Score", # 1
+  "STAI Trait T Score",
+  "BDI Total",
+  "PANAS Negative",
+  "PSS", # 5
+  "SQ",
+  "EQ",
+  "PANAS Positive",
+  "16PF Tension",
+  "16PF Emotional Stability", # 10
+  "16PF Reasoning",
+  "VCI IQ",
+  "16PF Apprehension",
+  "PRI IQ",
+  "16PF Rule Consciousness", # 15
+  "16PF Openness to Change",
+  "16PF Warmth",
+  "16PF Self Reliance",
+  "16PF Privateness",
+  "16PF Liveliness", # 20
+  "16PF Social Boldness",
+  "SNI People in Network",
+  "16PF Abstractedness",
+  "16PF Perfectionism",
+  "16PF Dominance", # 25
+  "16PF Vigilance",
+  "16PF Sensitivity") # 27
+
+# Subject IDs to row names
 row.names(no_msceit) <- cex$CC_ID
 
-# ************* Functions *************
+# *** FUNCTION DEFINITIONS ***
+
 # Function to impute NA values with the column mean
 impute_df <- function(df) {
   to_ret <- df
@@ -126,7 +163,6 @@ find_factors <- function(df, fileName) {
   a <- nMreg(x=df, cor=TRUE, model="factors",details=TRUE, method="spearman")
   write_file("Zoski", a[[2]][[1]], fileName)
   print(a)
-  
 }
 
 # Function to extract factors
@@ -141,7 +177,6 @@ exFac <- function(df, numFac){
   write.table(fit$loadings, file="factor_output.txt", sep = "\t")
   
   return((fit$loadings))
-  
 }
 
 # Function to estimate number of factors after removing X random subjects
@@ -160,7 +195,6 @@ remSubj <- function(df, numSubj, fileName){
     cat("Number of subjects removed is: ", numRemoved, "\n", file=fileName, fill=FALSE, append=TRUE)
     find_factors(rem, fileName) # find factors 
   }
-  
 }
 
 # Function to extract factors after removing X random subjects
@@ -185,7 +219,7 @@ visualize <- function(df, n, num_comp) {
   
 }
 
-# ************* Determine individual factor scores *************
+# Function to determine individual factor scores
 individual_scores <- function(df, numFactors, num_obs, fileName) {
   
   corr_mat <- cor(df, method="spearman")
@@ -194,40 +228,32 @@ individual_scores <- function(df, numFactors, num_obs, fileName) {
   write.table(scores, file=fileName, sep="\t")
   
 }
+
 # *** END OF FUNCTIONS ***
 
-# ************* Initialize Data Frames *************
+# Initialize data frames
 all_df <- data.frame(no_msceit) # 144 subjects
 colnames(all_df) <- names
 sum(is.na(all_df)/prod(dim(all_df))) # 0
 nona_df <- data.frame(na.omit(all_df)) # 144 subjects, 27 variables
 imputed_df <- impute_df(all_df) # 144 subjects
 
-# ************* Function Calls *************
-corr_mat <- cor(nona_df, method="spearman")
-factor_analysis <- fa(corr_mat, nfactors = 4, n.obs = 144, scores="regression")
+# Perform factor analysis
+r_spearman <- cor(nona_df, method="spearman")
+factor_analysis <- fa(r_spearman, nfactors = 4, n.obs = 144, scores="regression")
+
+# Calculate individual factor scores
 scores <- factor.scores(nona_df, factor_analysis$loadings, method="Harman")$scores
+
+# Write results
 write.table(scores, file="individual_score.tsv", sep="\t")
 write.table(factor_analysis$loadings, file="loadings.tsv", sep="\t")
 
 # Determine the number of factors
 num_fac <- find_factors(nona_df, "num_factor_revised.tsv")
 
-# Correlation plots
-# 2021-12 Mike Tyszka | CBIC
+# Correlation plot
+corrplot(r_spearman, order="FPC", tl.col="black")
 
-# Calculate Pearson's r for behavioral data
-r_pearson <- cor(nona_df, method="pearson")
-
-# corrplot visualization (no dendrogram)
-# corrplot(r_pearson, order="alphabet", tl.col="black")
-# corrplot(r_pearson, order="FPC", tl.col="black")
-# corrplot(r_pearson, order="hclust", hclust.method="complete", addrect=4, tl.col="black")
-
-# pheatmap visualization (no dots)
-pheatmap(
-  r_pearson,
-  clustering_method = 'complete',
-  clustering_distance_rows = as.dist(1 - r_pearson),
-  clustering_distance_cols = as.dist(1 - r_pearson),
-  )
+# Debugging
+r_spearman
