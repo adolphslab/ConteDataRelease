@@ -4,7 +4,7 @@
 #
 # Author : Rona Yu
 #
-# Copyright 2021 California Institute of Technolog
+# Copyright 2021 California Institute of Technology
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -37,17 +37,16 @@ library(psych)
 library(GPArotation)
 library(ggplot2)
 library(corrplot)
-library(pheatmap)
 
 
 # Edit for local folder location
 setwd("/Users/jmt/GitHub/ConteDataRelease/FactorAnalysis")
 
 # Load excel sheet
-cex <- read_excel('PARL_FA_20210312_Rona.xlsx') # n = 144
+cex <- read_excel('PARL_FA_Final.xlsx') # n = 144
 
 # Composite data frame from spreadsheet columns
-# Replace 16PF with I6PF in spreadsheet (variable names cannot begin with a number)
+# Replace 16PF with X16PF in spreadsheet (variable names cannot begin with a number)
 no_msceit <- cbind(
   cex$STAI_State_Tscore, # 1
   cex$STAI_Trait_Tscore,
@@ -57,25 +56,25 @@ no_msceit <- cbind(
   cex$SQ_Total,
   cex$EQ_Total,
   cex$PANAS_Positive,
-  cex$I6PF_Q1, # Tension
-  cex$I6PF_C, # 10
-  cex$I6PF_B,
+  cex$X16PF_Q4,
+  cex$X16PF_C, # 10
+  cex$X16PF_B,
   cex$VCI,
-  cex$I6PF_O,
+  cex$X16PF_O,
   cex$PRI,
-  cex$I6PF_G, # 15
-  cex$I6PF_Q1, # Openness to Change
-  cex$I6PF_A,
-  cex$I6PF_Q2, 
-  cex$I6PF_N,
-  cex$I6PF_F, # 20 
-  cex$I6PF_H,
+  cex$X16PF_G, # 15
+  cex$X16PF_Q1,
+  cex$X16PF_A,
+  cex$X16PF_Q2, 
+  cex$X16PF_N,
+  cex$X16PF_F, # 20 
+  cex$X16PF_H,
   cex$SNI_Count,
-  cex$I6PF_M,
-  cex$I6PF_Q3,
-  cex$I6PF_E, # 25
-  cex$I6PF_L,
-  cex$I6PF_I) # 27
+  cex$X16PF_M,
+  cex$X16PF_Q3,
+  cex$X16PF_E, # 25
+  cex$X16PF_L,
+  cex$X16PF_I) # 27
 
 # Readable name mapping
 names <- cbind(
@@ -121,19 +120,16 @@ impute_df <- function(df) {
   return(to_ret)
 }
 
-# Function to compute the overall correlation matrix
-plot_corr <- function(df){
-  M <- cor(df, method="spearman")
-  corrplot(M, method="color")
-}
-
 # Function to write number of factors to file 
 write_file <- function(method, numFac, fileName){ 
-  cat(method, "\t", numFac, "\n", file=fileName,fill=FALSE, append=TRUE)
+  cat(method, "\t", numFac, "\n", file=fileName, fill=FALSE, append=TRUE)
 }
 
 # Function to calculate number of factors 
 find_factors <- function(df, fileName) {
+  
+  # Init output file
+  write("Number of Factor Estimates", file=fileName, append=FALSE)
   
   # Velicer's MAP
   a <- MAP(df, corkind="spearman", verbose=TRUE)
@@ -165,70 +161,6 @@ find_factors <- function(df, fileName) {
   print(a)
 }
 
-# Function to extract factors
-exFac <- function(df, numFac){
-  
-  fit <- factanal(df, numFac, rotation="varimax")
-  
-  # Plot factor 1 by factor 2
-  load <- fit$loadings[,1:2]
-  plot(load, type="n") #set up plot
-  text(load, labels=names(df), cex=.7)
-  write.table(fit$loadings, file="factor_output.txt", sep = "\t")
-  
-  return((fit$loadings))
-}
-
-# Function to estimate number of factors after removing X random subjects
-# df: dataframe. numSubj: maximum number of subjects to remove 
-remSubj <- function(df, numSubj, fileName){
-  
-  cat("New Trial", "\n", file=fileName, fill=FALSE, append=FALSE)
-  
-  n <- dim(df)[1] # number of rows 
-  r <- seq(1, numSubj) # 1 to numSubj
-  
-  for(numRemoved in r){
-    toRemove <- sample(1:n, numRemoved, replace=F)
-    rem <- df[-toRemove, ]
-    print(rem)
-    cat("Number of subjects removed is: ", numRemoved, "\n", file=fileName, fill=FALSE, append=TRUE)
-    find_factors(rem, fileName) # find factors 
-  }
-}
-
-# Function to extract factors after removing X random subjects
-remExtract <- function(df, numSubj, numFac, fileName){
-  
-  n <- dim(df)[1]
-  toRemove <- sample(1:n, numSubj, replace=F)
-  rem <- df[-toRemove, ]
-  res <- exFac(rem, numFac)
-  write.table(res, file=fileName, sep="\t")
-  
-}
-
-# Function to visualize factors with FactoMineR
-visualize <- function(df, n, num_comp) {
-  
-  setnames(df, n)
-  df.pca <- PCA(df, ncp = num_comp, graph=FALSE)
-  fviz_pca_ind(df.pca, geom="text") # plot PCA results
-  var <- get_pca_var(df.pca)
-  print(var$contrib)
-  
-}
-
-# Function to determine individual factor scores
-individual_scores <- function(df, numFactors, num_obs, fileName) {
-  
-  corr_mat <- cor(df, method="spearman")
-  factor_analysis <- fa(corr_mat, nfactors = numFactors, n.obs = num_obs, scores="regression")
-  scores <- factor.scores(df, factor_analysis)$scores
-  write.table(scores, file=fileName, sep="\t")
-  
-}
-
 # *** END OF FUNCTIONS ***
 
 # Initialize data frames
@@ -238,22 +170,28 @@ sum(is.na(all_df)/prod(dim(all_df))) # 0
 nona_df <- data.frame(na.omit(all_df)) # 144 subjects, 27 variables
 imputed_df <- impute_df(all_df) # 144 subjects
 
-# Perform factor analysis
+# Use Spearman's correlation coefficient - scores not transformable to normal
 r_spearman <- cor(nona_df, method="spearman")
-factor_analysis <- fa(r_spearman, nfactors = 4, n.obs = 144, scores="regression")
 
-# Calculate individual factor scores
-scores <- factor.scores(nona_df, factor_analysis$loadings, method="Harman")$scores
+# Perform maximum likelihood factor analysis with varimax rotation
+# Write individual scores and loadings to files
+cat("\nFactor Analysis with Rotation\n")
+fa_rot <- fa(r_spearman, nfactors = 4, n.obs = 144, rotate="varimax", scores="regression", fm="ml")
+fa_rot_scores <- factor.scores(nona_df, fa_rot$loadings, method="Bartlett")$scores
+write.table(fa_rot_scores, file="fa_rotated_individual_score.tsv", sep="\t")
+write.table(fa_rot$loadings, file="fa_rotated_loadings.tsv", sep="\t")
 
-# Write results
-write.table(scores, file="individual_score.tsv", sep="\t")
-write.table(factor_analysis$loadings, file="loadings.tsv", sep="\t")
+# Perform maximum likelihood factor analysis without rotation
+# Write individual scores and loadings to files
+cat("\nFactor Analysis without Rotation\n")
+fa_unrot <- fa(r_spearman, nfactors = 4, n.obs = 144, rotate="none", scores="regression", fm="ml")
+fa_unrot_scores <- factor.scores(nona_df, fa_rot$loadings, method="Bartlett")$scores
+write.table(fa_unrot_scores, file="fa_unrotated_individual_score.tsv", sep="\t")
+write.table(fa_unrot$loadings, file="fa_unrotated_loadings.tsv", sep="\t")
 
 # Determine the number of factors
+# TODO: Lynn - leave in?
 num_fac <- find_factors(nona_df, "num_factor_revised.tsv")
 
 # Correlation plot
 corrplot(r_spearman, order="FPC", tl.col="black")
-
-# Debugging
-r_spearman
