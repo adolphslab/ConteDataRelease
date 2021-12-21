@@ -209,10 +209,11 @@ names_esch4 <- names[,c(ord4)]
 esch4_df <- data.frame(PARL_esch4) # 144 subjects
 colnames(esch4_df) <- names_esch4
 esch4_spearman <- cor(esch4_df, method="spearman")
+write.table(esch4_spearman, file="spearman_correlations_4esch.tsv", sep="\t")
 
 # Correlation plot 4 factors - save to PNG file
 png(file="CorrMat_4esch.png", width=3000, height=3000, res=300)
-corrplot(esch4_spearman, type="upper", tl.col="black") |> corrRect(name = c('STAI Trait','16PF Reasoning', '16PF Warmth', 'SQ', '16PF Perfectionism'))
+corrplot(esch4_spearman, type="upper", addCoef.col = "black", tl.col="black", tl.cex=1.2, cl.pos="b", cl.cex=1.2, number.font=10) |> corrRect(name = c('STAI Trait','16PF Reasoning', '16PF Warmth', 'SQ', '16PF Perfectionism'))
 dev.off()
 
 # *** 3-Factor FA ***
@@ -246,9 +247,10 @@ names_esch3 <- names[,c(ord3)]
 esch3_df <- data.frame(PARL_esch3) # 144 subjects
 colnames(esch3_df) <- names_esch3
 esch3_spearman <- cor(esch3_df, method="spearman")
+write.table(esch3_spearman, file="spearman_correlations_3esch.tsv", sep="\t")
 
 # Correlation plot 3 factors - save to PNG file
 png(file="CorrMat_3esch.png", width=3000, height=3000, res=300)
-corrplot(esch3_spearman, type="upper", tl.col="black") |> corrRect(name = c('STAI Trait','16PF Reasoning', '16PF Warmth','16PF Dominance'))
+corrplot(esch3_spearman, type="upper", tl.col="black", cex.var="1.2") |> corrRect(name = c('STAI Trait','16PF Reasoning', '16PF Warmth','16PF Dominance'))
 dev.off()
 
