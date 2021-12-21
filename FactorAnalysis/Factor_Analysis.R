@@ -2,7 +2,7 @@
 #
 # Factor Analysis
 #
-# Author : Rona Yu
+# Authors : original code by Rona Yu; additions by J. Michael Tyszka and Lynn K. Paul
 #
 # Copyright 2021 California Institute of Technology
 #
@@ -40,85 +40,77 @@ library(corrplot)
 
 
 # Edit for local folder location
-setwd("/Users/jmt/GitHub/ConteDataRelease/FactorAnalysis")
+setwd("/Users/lynnkps/Documents/GitHub/ConteDataRelease/FactorAnalysis")
 
 # Load excel sheet
 cex <- read_excel('PARL_FA_Final.xlsx') # n = 144
 
 # Composite data frame from spreadsheet columns
 # Replace 16PF with X16PF in spreadsheet (variable names cannot begin with a number)
-no_msceit <- cbind(
-  cex$STAI_State_Tscore, # 1
-  cex$STAI_Trait_Tscore,
-  cex$BDI2_Total,
-  cex$PANAS_Negative,
-  cex$PSS_Total, # 5
-  cex$SQ_Total,
-  cex$EQ_Total,
-  cex$PANAS_Positive,
-  cex$X16PF_Q4,
-  cex$X16PF_C, # 10
-  cex$X16PF_B,
-  cex$VCI,
-  cex$X16PF_O,
+PARL_data <- cbind(
+  cex$VCI, # 1
   cex$PRI,
-  cex$X16PF_G, # 15
-  cex$X16PF_Q1,
-  cex$X16PF_A,
-  cex$X16PF_Q2, 
-  cex$X16PF_N,
-  cex$X16PF_F, # 20 
-  cex$X16PF_H,
+  cex$BDI2_Total,
+  cex$STAI_Trait_Tscore,
+  #cex$STAI_State_Tscore, excluded from factor analysis due to high correlation with STAI Trait
+  cex$PANAS_Positive,
+  cex$PANAS_Negative,
+  cex$PSS_Total,
+  cex$EQ_Total,
+  cex$SQ_Total,
   cex$SNI_Count,
-  cex$X16PF_M,
-  cex$X16PF_Q3,
-  cex$X16PF_E, # 25
+  cex$X16PF_A,
+  cex$X16PF_B,
+  cex$X16PF_C,
+  cex$X16PF_E,
+  cex$X16PF_F,
+  cex$X16PF_G,
+  cex$X16PF_H,
+  cex$X16PF_I,
   cex$X16PF_L,
-  cex$X16PF_I) # 27
+  cex$X16PF_M,
+  cex$X16PF_N,
+  cex$X16PF_O,
+  cex$X16PF_Q1,
+  cex$X16PF_Q2, 
+  cex$X16PF_Q3,
+  cex$X16PF_Q4)
+
 
 # Readable name mapping
 names <- cbind(
-  "STAI State T Score", # 1
-  "STAI Trait T Score",
-  "BDI Total",
-  "PANAS Negative",
-  "PSS", # 5
-  "SQ",
-  "EQ",
-  "PANAS Positive",
-  "16PF Tension",
-  "16PF Emotional Stability", # 10
-  "16PF Reasoning",
-  "VCI IQ",
-  "16PF Apprehension",
+  "VCI IQ", # 1
   "PRI IQ",
-  "16PF Rule Consciousness", # 15
-  "16PF Openness to Change",
+  "BDI Total",
+  "STAI Trait", # T Score
+  #"STAI State T", # 5
+  "PANAS Positive",
+  "PANAS Negative",
+  "PSS",
+  "EQ",
+  "SQ", # 10
+  "SNI People", # People in Network
   "16PF Warmth",
-  "16PF Self Reliance",
-  "16PF Privateness",
-  "16PF Liveliness", # 20
+  "16PF Reasoning",
+  "16PF Emot. Stabil.", # Emotional Stability
+  "16PF Dominance",
+  "16PF Liveliness",
+  "16PF Rule Conscious", # Rule Consciousness
   "16PF Social Boldness",
-  "SNI People in Network",
-  "16PF Abstractedness",
-  "16PF Perfectionism",
-  "16PF Dominance", # 25
+  "16PF Sensitivity",
   "16PF Vigilance",
-  "16PF Sensitivity") # 27
+  "16PF Abstractedness",
+  "16PF Privateness",
+  "16PF Apprehension",
+  "16PF Open to Change", # Openness to Change
+  "16PF Self Reliance",
+  "16PF Perfectionism",
+  "16PF Tension")
 
 # Subject IDs to row names
-row.names(no_msceit) <- cex$CC_ID
+row.names(PARL_data) <- cex$CC_ID
 
 # *** FUNCTION DEFINITIONS ***
-
-# Function to impute NA values with the column mean
-impute_df <- function(df) {
-  to_ret <- df
-  for(i in 1:ncol(df)) {
-    to_ret[is.na(to_ret[,i]), i] <- mean(to_ret[, i], na.rm=TRUE)
-  }
-  return(to_ret)
-}
 
 # Function to write number of factors to file 
 write_file <- function(method, numFac, fileName){ 
@@ -130,11 +122,6 @@ find_factors <- function(df, fileName) {
   
   # Init output file
   write("Number of Factor Estimates", file=fileName, append=FALSE)
-  
-  # Velicer's MAP
-  a <- MAP(df, corkind="spearman", verbose=TRUE)
-  write_file("Velicer's 1976", a[[3]][1], fileName)
-  write_file("Velicer's 2000", a[[4]][1], fileName)
   
   # Horn's 
   a <- paran(df, cfa=TRUE, graph=FALSE)
@@ -159,40 +146,111 @@ find_factors <- function(df, fileName) {
   a <- nMreg(x=df, cor=TRUE, model="factors",details=TRUE, method="spearman")
   write_file("Zoski", a[[2]][[1]], fileName)
   print(a)
+  
+  # Velicer's MAP
+  a <- MAP(df, corkind="spearman", verbose=TRUE)
+  write_file("MAP-original 1976", a[[3]][1], fileName)
+  write_file("MAP-revised 2000", a[[4]][1], fileName)
+  
+  # Very Simple Structure from spearman correlation
+  sp <- cor(df, method="spearman")
+  a <- VSS(sp, n=6, rotate = "varimax", fm="mle", n.obs=NULL)
+  vss1 <- which.max(a$cfit.1)
+  vss2 <- which.max(a$cfit.2)
+  write_file("VSS1", vss1, fileName)
+  write_file("VSS2", vss2, fileName)
 }
 
 # *** END OF FUNCTIONS ***
 
 # Initialize data frames
-all_df <- data.frame(no_msceit) # 144 subjects
+all_df <- data.frame(PARL_data) # 144 subjects
 colnames(all_df) <- names
 sum(is.na(all_df)/prod(dim(all_df))) # 0
 nona_df <- data.frame(na.omit(all_df)) # 144 subjects, 27 variables
-imputed_df <- impute_df(all_df) # 144 subjects
 
 # Use Spearman's correlation coefficient - scores not transformable to normal
 r_spearman <- cor(nona_df, method="spearman")
 
-# Perform maximum likelihood factor analysis with varimax rotation
-# Write individual scores and loadings to files
-cat("\nFactor Analysis with Rotation\n")
-fa_rot <- fa(r_spearman, nfactors = 4, n.obs = 144, rotate="varimax", scores="regression", fm="ml")
-fa_rot_scores <- factor.scores(nona_df, fa_rot$loadings, method="Bartlett")$scores
-write.table(fa_rot_scores, file="fa_rotated_individual_score.tsv", sep="\t")
-write.table(fa_rot$loadings, file="fa_rotated_loadings.tsv", sep="\t")
-
-# Perform maximum likelihood factor analysis without rotation
-# Write individual scores and loadings to files
-cat("\nFactor Analysis without Rotation\n")
-fa_unrot <- fa(r_spearman, nfactors = 4, n.obs = 144, rotate="none", scores="regression", fm="ml")
-fa_unrot_scores <- factor.scores(nona_df, fa_unrot$loadings, method="Bartlett")$scores
-write.table(fa_unrot_scores, file="fa_unrotated_individual_score.tsv", sep="\t")
-write.table(fa_unrot$loadings, file="fa_unrotated_loadings.tsv", sep="\t")
-
 # Estimate number of factors with a variety of methods
 num_fac <- find_factors(nona_df, "num_factor_estimates.tsv")
-
-# Correlation plot - save to PNG file
-png(file="CorrMat_FPC.png", width=3000, height=3000, res=300)
-corrplot(r_spearman, order="FPC", tl.col="black")
+jpeg(file="VSS_scree.jpeg")
+VSS.scree(r_spearman)
 dev.off()
+
+# *** 4-Factor FA ***
+
+# Perform maximum likelihood factor analysis with varimax rotation, 4 factors
+# Write individual scores and loadings to files
+cat("\nFactor Analysis with Rotation\n")
+fa4_rot <- fa(r_spearman, nfactors = 4, n.obs = 144, rotate="Varimax", scores="regression", fm="ml")
+fa4_rot_scores <- factor.scores(nona_df, fa4_rot$loadings, method="Bartlett")$scores
+fa4_rot_sort <- fa.sort(fa4_rot)
+write.table(fa4_rot_scores, file="fa4_rotated_individual_score.tsv", sep="\t")
+write.table(fa4_rot_sort$loadings, file="fa4_rotated_loadings.tsv", sep="\t")
+
+# Perform maximum likelihood factor analysis without rotation, 4 factors
+# Write individual scores and loadings to files
+cat("\nFactor Analysis without Rotation\n")
+fa4_unrot <- fa(r_spearman, nfactors = 4, n.obs = 144, rotate="none", scores="regression", fm="ml")
+fa4_unrot_scores <- factor.scores(nona_df, fa4_unrot$loadings, method="Bartlett")$scores
+fa4_unrot_sort <- fa.sort(fa4_unrot)
+write.table(fa4_unrot_scores, file="fa4_unrotated_individual_score.tsv", sep="\t")
+write.table(fa4_unrot_sort$loadings, file="fa4_unrotated_loadings.tsv", sep="\t")
+
+# Congruence of rotated factors with unrotated factors - 4 factors
+Rot_v_Unrot4 <- factor.congruence(fa4_rot,fa4_unrot)
+write.table(Rot_v_Unrot4, file="Congruence_Rot_v_Unrot4.tsv", sep="\t")
+
+#FA4_Rotated Eschelon-ordering of Spearman matrix
+ord4 <- fa4_rot_sort$order
+PARL_esch4 <- PARL_data[,c(ord4)]
+names_esch4 <- names[,c(ord4)]
+esch4_df <- data.frame(PARL_esch4) # 144 subjects
+colnames(esch4_df) <- names_esch4
+esch4_spearman <- cor(esch4_df, method="spearman")
+write.table(esch4_spearman, file="spearman_correlations_4esch.tsv", sep="\t")
+
+# Correlation plot 4 factors - save to PNG file
+png(file="CorrMat_4esch.png", width=3000, height=3000, res=300)
+corrplot(esch4_spearman, type="upper", addCoef.col = "black", tl.col="black", tl.cex=1.2, cl.pos="b", cl.cex=1.2, number.font=10) |> corrRect(name = c('STAI Trait','16PF Reasoning', '16PF Warmth', 'SQ', '16PF Perfectionism'))
+dev.off()
+
+# *** 3-Factor FA ***
+
+# Perform maximum likelihood factor analysis with varimax rotation, 3 factors
+# Write individual scores and loadings to files
+cat("\nFactor Analysis with Rotation\n")
+fa3_rot <- fa(r_spearman, nfactors = 3, n.obs = 144, rotate="Varimax", scores="regression", fm="ml")
+fa3_rot_scores <- factor.scores(nona_df, fa3_rot$loadings, method="Bartlett")$scores
+fa3_rot_sort <- fa.sort(fa3_rot)
+write.table(fa3_rot_scores, file="fa3_rotated_individual_score.tsv", sep="\t")
+write.table(fa3_rot_sort$loadings, file="fa3_rotated_loadings.tsv", sep="\t")
+
+# Perform maximum likelihood factor analysis without rotation, 3 factors
+# Write individual scores and loadings to files
+cat("\nFactor Analysis without Rotation\n")
+fa3_unrot <- fa(r_spearman, nfactors = 3, n.obs = 144, rotate="none", scores="regression", fm="ml")
+fa3_unrot_scores <- factor.scores(nona_df, fa3_unrot$loadings, method="Bartlett")$scores
+fa3_unrot_sort <- fa.sort(fa3_unrot)
+write.table(fa3_unrot_scores, file="fa3_unrotated_individual_score.tsv", sep="\t")
+write.table(fa3_unrot_sort$loadings, file="fa3_unrotated_loadings.tsv", sep="\t")
+
+# Congruence of rotated factors with unrotated factors - 3 factors
+Rot_v_Unrot3 <- factor.congruence(fa3_rot,fa3_unrot)
+write.table(Rot_v_Unrot3, file="Congruence_Rot_v_Unrot3.tsv", sep="\t")
+
+#FA3_Rot Eschelon ordering of Spearman matrix
+ord3 <- fa3_rot_sort$order
+PARL_esch3 <- PARL_data[,c(ord3)]
+names_esch3 <- names[,c(ord3)]
+esch3_df <- data.frame(PARL_esch3) # 144 subjects
+colnames(esch3_df) <- names_esch3
+esch3_spearman <- cor(esch3_df, method="spearman")
+write.table(esch3_spearman, file="spearman_correlations_3esch.tsv", sep="\t")
+
+# Correlation plot 3 factors - save to PNG file
+png(file="CorrMat_3esch.png", width=3000, height=3000, res=300)
+corrplot(esch3_spearman, type="upper", tl.col="black", cex.var="1.2") |> corrRect(name = c('STAI Trait','16PF Reasoning', '16PF Warmth','16PF Dominance'))
+dev.off()
+
